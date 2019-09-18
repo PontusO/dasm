@@ -580,7 +580,7 @@ nextpass:
             printf("Warning: Unable to [re]open NoIce file '%s'\n", F_noicefile);
             return ERROR_FILE_ERROR;
         }
-        fprintf(FI_noicefile, "LASTFILELOADED\n"); 
+        fprintf(FI_noicefile, "LASTFILELOADED\n");
     }
     
     Localindex = Lastlocalindex = 0;
@@ -684,6 +684,7 @@ nextpass:
             if (NoIceSupport) {
                 BaseAddress = Csegment->org;
                 fprintf(FI_noicefile, "FILE %s %04x\n", pIncfile->name, (unsigned int)BaseAddress);
+                printf("FILE %s %04x\n", pIncfile->name, (unsigned int)BaseAddress);
             }
 
             if (F_listfile)

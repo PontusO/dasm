@@ -141,6 +141,13 @@ void v_mnemonic(char *str, MNEMONIC *mne)
     short opidx;
     SYMBOL *symbase;
     int     opsize;
+    int pcdiff = 0;
+
+    // We need to save the current org, rorg in case all goes well here
+    if (NoIceSupport) {
+      pcdiff = (Csegment->flags & SF_RORG) ? Csegment->rorg - BaseAddress : Csegment->org - BaseAddress;
+    }
+
     
     Csegment->flags |= SF_REF;
     programlabel();
@@ -344,6 +351,11 @@ void v_mnemonic(char *str, MNEMONIC *mne)
     Glen = opidx;
     generate();
     FreeSymbolList(symbase);
+
+    // NoIce support
+    if (NoIceSupport) {
+        fprintf(FI_noicefile, "LINE %d %04x\n", (int)pIncfile->lineno, (unsigned int)pcdiff);
+    }
 }
 
 void v_trace(char *str, MNEMONIC *dummy)
@@ -393,6 +405,12 @@ v_include(char *str, MNEMONIC *dummy)
     programlabel();
     buf = getfilename(str);
     
+    // If noice support has been enabled send the FILE declaration'
+    if (NoIceSupport) {
+      BaseAddress = (Csegment->flags & SF_RORG) ? Csegment->rorg : Csegment->org;
+      fprintf(FI_noicefile, "FILE %s  %04x (v_include)\n", buf, (unsigned int)BaseAddress);
+    }
+
     pushinclude(buf);
     
     if (buf != str)
@@ -737,6 +755,11 @@ v_org(char *str, MNEMONIC *dummy)
     
     programlabel();
     FreeSymbolList(sym);
+    // If noice support has been enabled send the FILE declaration'
+    if (NoIceSupport) {
+        BaseAddress = Csegment->org;
+        fprintf(FI_noicefile, "FILE %s  %04x (v_org)\n", pIncfile->name, (unsigned int)BaseAddress);
+    }
 }
 
 void
@@ -758,6 +781,11 @@ v_rorg(char *str, MNEMONIC *dummy)
     }
     programlabel();
     FreeSymbolList(sym);
+    // If noice support has been enabled send the FILE declaration'
+    if (NoIceSupport) {
+	  BaseAddress = Csegment->rorg;
+        fprintf(FI_noicefile, "FILE %s  %04x\n", pIncfile->name, (unsigned int)Csegment->rorg);
+    }
 }
 
 void
@@ -765,6 +793,10 @@ v_rend(char *str, MNEMONIC *dummy)
 {
     programlabel();
     Csegment->flags &= ~SF_RORG;
+    // If noice support has been enabled send the FILE declaration'
+    if (NoIceSupport) {
+        fprintf(FI_noicefile, "FILE %s  %04x\n", pIncfile->name, (unsigned int)Csegment->org);
+    }
 }
 
 void
